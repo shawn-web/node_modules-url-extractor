@@ -1,0 +1,200 @@
+{
+  "name": "node_modules-url-extractor",
+  "displayName": "Node Modules URL Extractor",
+  "description": "Real-time monitoring of node_modules changes and extracting URL information from package.json",
+  "version": "0.1.0",
+  "publisher": "your-publisher-name",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/node_modules-url-extractor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/node_modules-url-extractor/issues"
+  },
+  "homepage": "https://github.com/your-username/node_modules-url-extractor#readme",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other",
+    "Extension Packs"
+  ],
+  "icon": "resources/icon.png",
+  "activationEvents": [
+    "onView:nodeModulesExtractor.tree",
+    "onCommand:nodeModulesExtractor.extractUrls",
+    "workspaceContains:node_modules",
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "nodeModulesExtractor",
+          "title": "依赖文档",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "nodeModulesExtractor": [
+        {
+          "id": "nodeModulesExtractor.tree",
+          "name": "依赖文档"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "nodeModulesExtractor.tree",
+        "contents": "点击下方按钮提取依赖文档，或等待自动监测完成。[提取文档](command:nodeModulesExtractor.extractUrls)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "nodeModulesExtractor.extractUrls",
+        "title": "提取所有依赖URL",
+        "icon": "$(link)"
+      },
+      {
+        "command": "nodeModulesExtractor.configure",
+        "title": "配置提取器",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "nodeModulesExtractor.toggleMonitoring",
+        "title": "开启/关闭监测",
+        "icon": "$(eye)"
+      },
+
+      {
+        "command": "nodeModulesExtractor.refresh",
+        "title": "刷新",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "nodeModulesExtractor.manageExclusions",
+        "title": "管理排除项目",
+        "icon": "$(exclude)"
+      }
+    ],
+    "configuration": {
+      "title": "Node Modules URL Extractor",
+      "properties": {
+        "nodeModulesExtractor.maxDepth": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "遍历node_modules的最大深度"
+        },
+        "nodeModulesExtractor.outputFileName": {
+          "type": "string",
+          "default": "dependency-urls.md",
+          "description": "输出文件名"
+        },
+        "nodeModulesExtractor.outputFormat": {
+          "type": "string",
+          "enum": ["markdown", "json"],
+          "default": "markdown",
+          "description": "输出文件格式"
+        },
+        "nodeModulesExtractor.autoMonitoring": {
+          "type": "boolean",
+          "default": true,
+          "description": "自动监测node_modules变化"
+        },
+        "nodeModulesExtractor.extractOnStartup": {
+          "type": "boolean",
+          "default": true,
+          "description": "VSCode启动时自动提取依赖URL"
+        },
+        "nodeModulesExtractor.initialDelay": {
+          "type": "number",
+          "default": 3000,
+          "minimum": 1000,
+          "maximum": 10000,
+          "description": "启动后延迟提取的时间（毫秒）"
+        },
+        "nodeModulesExtractor.incrementalUpdate": {
+          "type": "boolean",
+          "default": true,
+          "description": "启用增量更新，只提取变更的依赖包"
+        },
+        "nodeModulesExtractor.excludedProjects": {
+          "type": "array",
+          "default": [],
+          "description": "排除的项目路径列表，这些项目不会被检查"
+        },
+        "nodeModulesExtractor.autoDetectProjects": {
+          "type": "boolean",
+          "default": true,
+          "description": "自动检测多工作区项目"
+        },
+        "nodeModulesExtractor.includeFields": {
+          "type": "array",
+          "default": ["homepage", "repository", "bugs", "documentation"],
+          "description": "要提取的URL字段"
+        }
+      }
+    },
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "nodeModulesExtractor.extractUrls",
+          "group": "navigation",
+          "when": "explorerResourceIsFolder && explorerResourceIsRoot"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "nodeModulesExtractor.refresh",
+          "when": "view == nodeModulesExtractor.tree",
+          "group": "navigation"
+        },
+        {
+          "command": "nodeModulesExtractor.extractUrls",
+          "when": "view == nodeModulesExtractor.tree",
+          "group": "navigation"
+        },
+        {
+          "command": "nodeModulesExtractor.toggleMonitoring",
+          "when": "view == nodeModulesExtractor.tree",
+          "group": "navigation"
+        }
+      ],
+
+        "commandPalette": [
+        {
+          "command": "nodeModulesExtractor.extractUrls",
+          "when": "workspaceContains:node_modules"
+        },
+        {
+          "command": "nodeModulesExtractor.configure"
+        },
+        {
+          "command": "nodeModulesExtractor.toggleMonitoring",
+          "when": "workspaceContains:node_modules"
+        },
+        {
+          "command": "nodeModulesExtractor.refresh",
+          "when": "workspaceContains:node_modules"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "glob": "^8.1.0"
+  }
+}
