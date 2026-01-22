@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { DependencyDetailProvider } from './DependencyDetailProvider';
+import { I18n } from './i18n/I18n';
 
 export class DependencyTreeProvider implements vscode.TreeDataProvider<DependencyItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<DependencyItem | undefined | null | void> = new vscode.EventEmitter<DependencyItem | undefined | null | void>();
@@ -25,7 +26,7 @@ export class DependencyTreeProvider implements vscode.TreeDataProvider<Dependenc
             if (e.selection.length > 0) {
                 const item = e.selection[0];
                 if (item.contextValue === 'urlItem' && item.url) {
-                    console.log('点击URL:', item.url);
+                    console.log('Click URL:', item.url);
                     this.openUrlInBrowser(item.url);
                 }
             }
@@ -33,11 +34,11 @@ export class DependencyTreeProvider implements vscode.TreeDataProvider<Dependenc
 
         // 添加双击事件监听
         this.treeView.onDidCollapseElement(e => {
-            console.log('折叠元素:', e.element.label);
+            console.log('Collapse element:', e.element.label);
         });
 
         this.treeView.onDidExpandElement(e => {
-            console.log('展开元素:', e.element.label);
+            console.log('Expand element:', e.element.label);
         });
     }
 
@@ -46,8 +47,75 @@ refresh(treeData?: any): void {
     this._onDidChangeTreeData.fire();
 }
 
+/**
+ * 📊 计算总的依赖数量
+ */
+private calculateTotalDependencies(treeData: any): number {
+    if (!treeData || typeof treeData !== 'object') {
+        return 0;
+    }
+
+    let totalCount = 0;
+    
+    // 统计各类型依赖的数量
+    const depTypes = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
+    
+    for (const depType of depTypes) {
+        const depData = treeData[depType];
+        if (depData && typeof depData === 'object') {
+            totalCount += Object.keys(depData).length;
+        }
+    }
+    
+    // 如果有根节点结构，也进行统计
+    if (treeData.root && treeData.root.dependencies) {
+        totalCount += Object.keys(treeData.root.dependencies).length;
+    }
+    
+    return totalCount;
+}
+
+/**
+ * 📈 计算各类型依赖的数量
+ */
+private calculateDependencyTypeCounts(treeData: any): { [key: string]: number } {
+    const counts: { [key: string]: number } = {};
+    
+    // 统计各类型依赖的数量
+    const depTypes = [
+        { key: 'dependencies', name: I18n.t('dependencies') },
+        { key: 'devDependencies', name: I18n.t('devDependencies') },
+        { key: 'peerDependencies', name: I18n.t('peerDependencies') },
+        { key: 'optionalDependencies', name: I18n.t('optionalDependencies') }
+    ];
+    
+    for (const depType of depTypes) {
+        const depData = treeData[depType.key];
+        if (depData && typeof depData === 'object') {
+            counts[depType.name] = Object.keys(depData).length;
+        }
+    }
+    
+    return counts;
+}
+
+/**
+ * 💬 生成统计信息的tooltip
+ */
+private generateSummaryTooltip(typeCounts: { [key: string]: number }): string {
+    const lines = [I18n.t('dependencyStatistics')];
+    
+    for (const [type, count] of Object.entries(typeCounts)) {
+        if (count > 0) {
+            lines.push(`  • ${type}: ${count}`);
+        }
+    }
+    
+    return lines.join('\n');
+}
+
 // 获取当前的树数据，用于详情显示
-public getCurrentTreeData(): any {
+ public getCurrentTreeData(): any {
     return this.treeData;
 }
 
@@ -73,23 +141,39 @@ public getCurrentTreeData(): any {
         
         // 检查treeData是否存在
         if (!this.treeData) {
-            console.log('树数据为空，无法显示项目');
+            console.log('Tree data is empty, cannot display items');
             return items;
         }
         
-        console.log('树数据结构:', JSON.stringify(this.treeData, null, 2));
+        console.log('Tree data structure:', JSON.stringify(this.treeData, null, 2));
+        
+        // 📊 计算总数并添加顶部统计项
+        const totalCount = this.calculateTotalDependencies(this.treeData);
+        if (totalCount > 0) {
+            const typeCounts = this.calculateDependencyTypeCounts(this.treeData);
+            const summaryTooltip = this.generateSummaryTooltip(typeCounts);
+            
+            const summaryItem = new DependencyItem(
+                `📊 ${I18n.t('dependencyStatistics')}: ${totalCount}`,
+                '',
+                vscode.TreeItemCollapsibleState.Expanded
+            );
+            summaryItem.contextValue = 'summaryItem';
+            summaryItem.tooltip = summaryTooltip;
+            items.push(summaryItem);
+        }
         
         // 按依赖类型分组显示顶级依赖
         const depTypes = [
-            { key: 'dependencies', name: '生产依赖', icon: '📦' },
-            { key: 'devDependencies', name: '开发依赖', icon: '🛠️' },
-            { key: 'peerDependencies', name: '对等依赖', icon: '🤝' },
-            { key: 'optionalDependencies', name: '可选依赖', icon: '⚡' }
+            { key: 'dependencies', name: I18n.t('dependencies'), icon: '📦' },
+            { key: 'devDependencies', name: I18n.t('devDependencies'), icon: '🛠️' },
+            { key: 'peerDependencies', name: I18n.t('peerDependencies'), icon: '🤝' },
+            { key: 'optionalDependencies', name: I18n.t('optionalDependencies'), icon: '⚡' }
         ];
 
         for (const depType of depTypes) {
             const depData = this.treeData[depType.key];
-            console.log(`检查 ${depType.key}:`, depData);
+            console.log(`Checking ${depType.key}:`, depData);
             
             if (depData && typeof depData === 'object' && Object.keys(depData).length > 0) {
                 // 为每个依赖类型创建分组标题，设置为可折叠
@@ -102,18 +186,18 @@ public getCurrentTreeData(): any {
                 groupItem.packageData = { dependencies: depData };
                 groupItem.dependencyType = depType.key;
                 items.push(groupItem);
-                console.log(`添加分组: ${depType.name}`);
+                console.log(`Added group: ${depType.name}`);
             }
         }
         
         // 如果没有任何依赖类型的数据，显示提示信息
         if (items.length === 0) {
-            console.log('未找到任何依赖数据，检查树结构是否正确');
+            console.log('No dependency data found, checking tree structure');
             // 检查是否有根节点或其他结构
             if (this.treeData.root && this.treeData.root.dependencies) {
-                console.log('发现根节点结构，尝试处理');
+                console.log('Found root node structure, attempting to process');
                 const rootItem = new DependencyItem(
-                    '📦 所有依赖',
+                    `📦 ${I18n.t('allDependencies')}`,
                     '',
                     vscode.TreeItemCollapsibleState.Collapsed
                 );
@@ -124,7 +208,7 @@ public getCurrentTreeData(): any {
             } else {
                 // 显示无数据提示
                 const noDataItem = new DependencyItem(
-                    'ℹ️ 未找到依赖数据',
+                    `ℹ️ ${I18n.t('noDataMessage')}`,
                     '',
                     vscode.TreeItemCollapsibleState.None
                 );
@@ -133,7 +217,7 @@ public getCurrentTreeData(): any {
             }
         }
 
-        console.log(`根节点项目数量: ${items.length}`);
+        console.log(`Root node item count: ${items.length}`);
         return items;
     }
 
@@ -154,7 +238,7 @@ public getCurrentTreeData(): any {
                     vscode.TreeItemCollapsibleState.Collapsed,
                     {
                         command: 'nodeModulesExtractor.showPackageDetail',
-                        title: '显示包详情',
+                        title: I18n.t('showPackageDetails'),
                         arguments: [dep, name]
                     }
                 );
@@ -174,7 +258,7 @@ public getCurrentTreeData(): any {
             // 如果有URL信息，创建链接组合项
             if (packageData.urls && typeof packageData.urls === 'object' && Object.keys(packageData.urls).length > 0) {
                 const urlsItem = new DependencyItem(
-                    '🔗 链接信息',
+                    `🔗 ${I18n.t('linkInformation')}`,
                     '',
                     vscode.TreeItemCollapsibleState.Collapsed
                 );
@@ -192,7 +276,7 @@ public getCurrentTreeData(): any {
                         vscode.TreeItemCollapsibleState.Collapsed,
                         {
                             command: 'nodeModulesExtractor.showPackageDetail',
-                            title: '显示包详情',
+                            title: I18n.t('showPackageDetails'),
                             arguments: [dep, name]
                         }
                     );
@@ -205,7 +289,7 @@ public getCurrentTreeData(): any {
             // 如果没有详细信息，显示提示
             if (!packageData.urls && !packageData.dependencies) {
                 const noInfoItem = new DependencyItem(
-                    'ℹ️ 无详细信息',
+                    `ℹ️ ${I18n.t('noDetailedInfo')}`,
                     '',
                     vscode.TreeItemCollapsibleState.None
                 );
@@ -219,11 +303,11 @@ public getCurrentTreeData(): any {
                 return items;
             }
             
-            const urlTypes = [
-                { key: 'homepage', name: '主页', icon: '🏠' },
-                { key: 'repository', name: '代码仓库', icon: '📁' },
-                { key: 'bugs', name: '问题反馈', icon: '🐛' },
-                { key: 'documentation', name: '文档', icon: '📚' }
+                const urlTypes = [
+                { key: 'homepage', name: I18n.t('homepage'), icon: '🏠' },
+                { key: 'repository', name: I18n.t('repository'), icon: '📁' },
+                { key: 'bugs', name: I18n.t('bugs'), icon: '🐛' },
+                { key: 'documentation', name: I18n.t('documentation'), icon: '📚' }
             ];
 
         for (const urlType of urlTypes) {
@@ -235,12 +319,12 @@ public getCurrentTreeData(): any {
                     vscode.TreeItemCollapsibleState.None,
                     {
                         command: 'nodeModulesExtractor.openUrl',
-                        title: '打开链接',
+                        title: I18n.t('clickToOpen'),
                         arguments: [url]
                     }
                 );
                 urlItem.contextValue = 'urlItem';
-                urlItem.tooltip = `点击打开: ${url}`;
+                urlItem.tooltip = `${I18n.t('clickToOpen')}: ${url}`;
                 items.push(urlItem);
             }
         }
@@ -255,7 +339,7 @@ public getCurrentTreeData(): any {
                         vscode.TreeItemCollapsibleState.Collapsed,
                         {
                             command: 'nodeModulesExtractor.showPackageDetail',
-                            title: '显示包详情',
+                            title: I18n.t('showPackageDetails'),
                             arguments: [dep, name]
                         }
                     );
@@ -276,7 +360,7 @@ public getCurrentTreeData(): any {
                         vscode.TreeItemCollapsibleState.None
                     );
                     urlItem.contextValue = 'urlItem';
-                    urlItem.tooltip = `点击打开: ${item.url}`;
+                    urlItem.tooltip = `${I18n.t('clickToOpen')}: ${item.url}`;
                     items.push(urlItem);
                 });
         }
@@ -338,12 +422,12 @@ public getCurrentTreeData(): any {
 
     private getUrlTypeName(type: string): string {
         const names: { [key: string]: string } = {
-            homepage: '主页',
-            repository: '代码仓库',
-            bugs: '问题反馈',
-            documentation: '文档'
+            homepage: I18n.t('homepage'),
+            repository: I18n.t('repository'),
+            bugs: I18n.t('bugs'),
+            documentation: I18n.t('documentation')
         };
-        return names[type] || '其他';
+        return names[type] || I18n.t('other');
     }
 
     private isValidUrl(url: string): boolean {
@@ -377,7 +461,7 @@ public getCurrentTreeData(): any {
 
     private async openUrlInBrowser(url: string): Promise<void> {
         if (!url || typeof url !== 'string') {
-            vscode.window.showErrorMessage('无效的URL');
+            vscode.window.showErrorMessage(I18n.t('invalidUrl'));
             return;
         }
 
@@ -407,14 +491,14 @@ public getCurrentTreeData(): any {
             // 确保是支持的协议
             const supportedSchemes = ['http', 'https', 'mailto'];
             if (!supportedSchemes.includes(uri.scheme)) {
-                vscode.window.showErrorMessage(`不支持的URL协议: ${uri.scheme}`);
+                vscode.window.showErrorMessage(`${I18n.t('unsupportedProtocol')}: ${uri.scheme}`);
                 return;
             }
 
             // 打开URL
             await vscode.env.openExternal(uri);
         } catch (error) {
-            vscode.window.showErrorMessage(`URL格式错误: ${error instanceof Error ? error.message : '未知错误'}`);
+            vscode.window.showErrorMessage(`${I18n.t('urlFormatError')}: ${error instanceof Error ? error.message : I18n.t('unknown')}`);
         }
     }
 }
@@ -427,7 +511,12 @@ export class DependencyItem extends vscode.TreeItem {
         public readonly command?: vscode.Command
     ) {
         super(label, collapsibleState);
-        this.tooltip = `${this.label}${this.url ? ` - ${this.url}` : ''}`;
+        // 为URL项添加统一的tooltip格式
+        if (this.url) {
+            this.tooltip = `${I18n.t('clickToOpen')}: ${this.url}`;
+        } else {
+            this.tooltip = this.label;
+        }
         if (this.url) {
             this.resourceUri = vscode.Uri.parse(this.url);
         }

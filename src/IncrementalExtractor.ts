@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PackageInfo, ExtractorConfig } from './NodeModulesExtractor';
+import { I18n } from './i18n/I18n';
 
 export interface CachedPackageInfo extends PackageInfo {
     lastModified: number;
@@ -34,7 +35,7 @@ export class IncrementalExtractor {
                 }
             }
         } catch (error) {
-            console.warn('加载缓存失败:', error);
+            console.warn('Cache loading failed:', error);
         }
         
         // 初始化新缓存
@@ -53,7 +54,7 @@ export class IncrementalExtractor {
             }
             fs.writeFileSync(this.cacheFilePath, JSON.stringify(this.cache, null, 2), 'utf-8');
         } catch (error) {
-            console.warn('保存缓存失败:', error);
+            console.warn('Cache saving failed:', error);
         }
     }
 

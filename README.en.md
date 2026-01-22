@@ -1,5 +1,9 @@
 # Node Modules URL Extractor
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![VSCode](https://img.shields.io/badge/VSCode-1.74.0+-blue.svg)](https://code.visualstudio.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-4.9.4-blue.svg)](https://www.typescriptlang.org/)
+
 A powerful VSCode extension for real-time monitoring of node_modules changes and extracting URL information from package.json files to generate structured dependency documentation.
 
 ## 📋 Table of Contents
@@ -10,12 +14,15 @@ A powerful VSCode extension for real-time monitoring of node_modules changes and
 - [📋 Command List](#-command-list)
 - [📄 Output Examples](#-output-examples)
 - [🎯 Use Cases](#-use-cases)
-- [🛠️ Development](#️-development)
+- [🔧 FAQ](#-faq)
+- [🛠️ Development Guide](#️-development-guide)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 - [🙏 Acknowledgments](#-acknowledgments)
 
 ## ✨ Features
+
+### Core Features
 
 - 🔍 **Real-time Monitoring** - Automatically monitors node_modules directory changes
 - 📊 **Deep Traversal** - Configurable traversal depth (1-10 levels) for deep dependency analysis
@@ -28,42 +35,70 @@ A powerful VSCode extension for real-time monitoring of node_modules changes and
 - 🚀 **Incremental Updates** - Smart change detection, only updates changed packages for efficiency
 - 🎯 **Project Exclusion** - Support for excluding specific projects from monitoring
 - 👁️ **Status Monitoring** - Clear monitoring status display (open/closed eye icons)
+- 🌍 **Multi-language Support** - Supports Chinese and English interface switching
+
+### Technical Highlights
+
+- ⚡ **High Performance** - Uses incremental update mechanism to significantly improve processing speed
+- 🎯 **Precise Recognition** - Intelligently identifies different dependency types (dependencies, devDependencies, etc.)
+- 📊 **Statistical Analysis** - Automatically generates dependency statistics including coverage analysis
+- 🔍 **Hierarchical Display** - Clearly displays dependency hierarchy for better understanding of project structure
+- 💡 **User-friendly** - Intuitive tree view, click to view detailed information
 
 ## 🚀 Installation & Usage
 
 ### Installation Methods
 
-1. **Install from VSCode Marketplace**
-   - Open VSCode
-   - Press `Ctrl+Shift+X` to open the Extensions panel
-   - Search for "Node Modules URL Extractor"
-   - Click Install
+#### Method 1: Install from VSCode Marketplace
 
-2. **Install from Local Development**
-   ```bash
-   git clone https://github.com/your-username/node_modules-url-extractor.git
-   cd node_modules-url-extractor
-   npm install
-   npm run compile
-   ```
+1. Open VSCode
+2. Press `Ctrl+Shift+X` to open Extensions panel
+3. Search for "Node Modules URL Extractor"
+4. Click Install
+
+#### Method 2: Install from Local Development
+
+```bash
+git clone https://github.com/shawn-web/node_modules-url-extractor.git
+cd node_modules-url-extractor
+npm install
+npm run compile
+```
 
 ### Usage Methods
 
-1. **Automatic Monitoring Mode**
-   - The extension automatically starts monitoring node_modules changes after activation
-   - Status bar shows current monitoring status
-   - Dependency documentation is automatically updated when changes are detected
+#### 1. Automatic Monitoring Mode
 
-2. **Manual Extraction Mode**
-   - Press `Ctrl+Shift+P` to open the command palette
-   - Type "Extract all dependency URLs" or select the relevant command
-   - Wait for processing to complete
+The extension automatically starts monitoring node_modules changes after activation:
+- Status bar shows current monitoring status
+- Dependency documentation is automatically updated when changes are detected
+- No manual operation required, fully automated
 
-3. **Viewing Dependency Information**
-   - Click the "Dependency Documentation" icon in the activity bar
-   - Browse the complete dependency tree structure
-   - Click package names to view detailed information
-   - Click URL links to visit them directly
+#### 2. Manual Extraction Mode
+
+```bash
+# Press Ctrl+Shift+P to open command palette
+# Type "Extract all dependency URLs" or select relevant command
+# Wait for processing to complete
+```
+
+#### 3. Viewing Dependency Information
+
+```bash
+# Click "Dependency Documentation" icon in activity bar
+# Browse complete dependency tree structure
+# Click package names to view detailed information
+# Click URL links to visit them directly
+```
+
+#### 4. Switch Language
+
+```bash
+# Press Ctrl+Shift+P to open command palette
+# Type "Change Language"
+# Select "简体中文" or "English"
+# Language takes effect immediately, no restart needed
+```
 
 ## ⚙️ Configuration Options
 
@@ -81,6 +116,7 @@ Search for "nodeModulesExtractor" in VSCode settings to configure:
 | `excludedProjects` | array | `[]` | List of excluded project paths |
 | `autoDetectProjects` | boolean | `true` | Auto-detect multi-workspace projects |
 | `includeFields` | array | `["homepage","repository","bugs","documentation"]` | URL fields to extract |
+| `language` | enum | `zh-CN` | Interface language (zh-CN/en) |
 
 ## 📋 Command List
 
@@ -91,6 +127,7 @@ Search for "nodeModulesExtractor" in VSCode settings to configure:
 | `nodeModulesExtractor.toggleMonitoring` | Toggle monitoring on/off | Status Bar Button |
 | `nodeModulesExtractor.refresh` | Refresh dependency information | Tree View Button |
 | `nodeModulesExtractor.manageExclusions` | Manage excluded projects list | Command Palette |
+| `nodeModulesExtractor.changeLanguage` | Switch language | Command Palette |
 
 ## 📄 Output Examples
 
@@ -99,9 +136,9 @@ Search for "nodeModulesExtractor" in VSCode settings to configure:
 ```markdown
 # 📚 Node Modules Dependency Documentation
 
-> 📅 Generated: 2026/1/21 10:11:34  
-> 🔍 Scan Depth: 3 levels  
-> 📦 Total Packages: 207  
+> 📅 Generated: 2026/1/21 10:11:34
+> 🔍 Scan Depth: 3 levels
+> 📦 Total Packages: 207
 > 🔗 Packages with URLs: 207
 
 ---
@@ -188,25 +225,52 @@ Search for "nodeModulesExtractor" in VSCode settings to configure:
 
 ## 🎯 Use Cases
 
-### 📚 Project Documentation Management
-Quickly understand all dependencies' official documentation and generate unified technical documentation
+- 📚 **Project Documentation Management** - Quickly understand all dependencies' official documentation
+- 🔍 **Dependency Security Auditing** - Check official addresses and issue reporting channels
+- 📊 **Technology Stack Analysis** - Statistics on technology stacks used in project
+- 🔄 **Dependency Migration** - Quick access to all dependencies' official info during migration
+- 📖 **Team Onboarding** - Help new team members understand project dependency structure
+- 🎓 **Learning and Research** - Study open source projects' dependency relationships and best practices
+- 🔧 **Version Upgrades** - Quickly view official docs and changelogs before upgrading dependencies
+- 📋 **Compliance Checking** - Check dependency licenses and compliance
 
-### 🔍 Dependency Security Auditing
-Check official addresses and issue reporting channels for dependency packages to identify potential security risks
+## 🔧 FAQ
 
-### 📊 Technology Stack Analysis
-Statistics on technology stacks used in the project and corresponding official resources for technology selection
+### Q1: What to do if the extension doesn't work properly?
 
-### 🔄 Dependency Migration
-Quickly get all dependency official information and compatibility during project migration or refactoring
+**A:** Please follow these troubleshooting steps:
+1. Check if there's a `node_modules` folder in the project root
+2. Confirm `package.json` file exists and is properly formatted
+3. Check error messages in VSCode output panel
+4. Try reloading the window (`Ctrl+Shift+P` -> "Reload Window")
 
-### 📖 Team Onboarding
-Help new team members quickly understand project dependency structure and related documentation
+### Q2: How to extract only specific types of dependencies?
 
-### 🏢 Enterprise Asset Management
-Generate complete dependency inventories for enterprise software asset management
+**A:** Modify the `includeFields` option in settings to select only needed fields:
+```json
+{
+  "includeFields": ["homepage", "repository"]
+}
+```
 
-## 🛠️ Development
+### Q3: What to do if incremental updates don't work?
+
+**A:** Ensure `incrementalUpdate` is set to `true`, and allow sufficient time for the extension to detect changes.
+
+### Q4: How to exclude certain projects?
+
+**A:** Use the `manageExclusions` command or configure `excludedProjects` in settings:
+```json
+{
+  "excludedProjects": ["/path/to/excluded/project"]
+}
+```
+
+### Q5: Where is the output file saved?
+
+**A:** By default, it's saved in the project root as `dependency-urls.md`, which can be modified via `outputFileName` configuration.
+
+## 🛠️ Development Guide
 
 ### Project Structure
 
@@ -219,115 +283,104 @@ Generate complete dependency inventories for enterprise software asset managemen
 │   ├── DependencyTreeProvider.ts     # VSCode tree view provider
 │   ├── MarkdownGenerator.ts         # Markdown documentation generation
 │   ├── DependencyDetailProvider.ts  # Detail panel provider
-│   └── IncrementalExtractor.ts     # Incremental update logic
+│   ├── IncrementalExtractor.ts     # Incremental update logic
+│   └── i18n/                     # Internationalization
+│       ├── I18n.ts                # I18n class implementation
+│       ├── I18nConfig.ts          # I18n configuration interface
+│       ├── zhCN.ts                # Chinese translation
+│       └── en.ts                 # English translation
 ├── resources/
-│   ├── icon.svg                     # Activity bar icon
-│   └── logo.svg                     # Extension icon
-├── package.json                     # Extension configuration
-├── tsconfig.json                    # TypeScript configuration
-├── README.md                        # English documentation
-└── README.zh-CN.md                  # Chinese documentation
+│   ├── icon.svg                   # Activity bar icon
+│   ├── logo.svg                   # Extension icon
+│   └── icon.png                  # Backup icon
+├── test-project/                  # Test project
+├── package.json                  # Extension configuration
+├── package.nls.json             # English localization
+├── package.nls.zh-cn.json       # Chinese localization
+├── tsconfig.json                 # TypeScript configuration
+├── README.md                     # English documentation
+└── README.zh-CN.md              # Chinese documentation
 ```
 
-### Development Environment Setup
+### Build Project
 
-1. **Clone Repository**
-   ```bash
-   git clone https://github.com/your-username/node_modules-url-extractor.git
-   cd node_modules-url-extractor
-   ```
+```bash
+# Install dependencies
+npm install
 
-2. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+# Compile project
+npm run compile
 
-3. **Compile TypeScript**
-   ```bash
-   npm run compile
-   ```
+# Watch mode
+npm run watch
+```
 
-4. **Start Debugging**
-   - Open this project in VSCode
-   - Press `F5` to launch debug window
-   - Test extension features in the new window
+### Debug Extension
 
-### Development Guidelines
+1. Open this project in VSCode
+2. Press F5 to launch debug window
+3. Test extension features in new window
+4. Check logs in output panel
 
-- Follow existing code style and naming conventions
-- Add appropriate comments and type definitions
-- Ensure new features have corresponding test cases
-- Run `npm run compile` before committing to ensure error-free code
+### Package Extension
+
+```bash
+# Install vsce tool
+npm install -g @vscode/vsce
+
+# Package as .vsix file
+vsce package
+
+# Publish to marketplace
+vsce publish
+```
 
 ## 🤝 Contributing
 
 We welcome all forms of contributions!
 
-### Reporting Issues
+### Contributing Process
 
-If you find a bug or have feature suggestions, please:
-
-1. Search existing issues on the [Issues](https://github.com/your-username/node_modules-url-extractor/issues) page
-2. If no related issue exists, create a new Issue
-3. Provide detailed problem description, reproduction steps, and environment information
-
-### Submitting Code
-
-1. **Fork Repository** to your GitHub account
-2. **Create Feature Branch**
+1. Fork this repository
+2. Create your feature branch
    ```bash
-   git checkout -b feature/your-feature-name
+   git checkout -b feature/AmazingFeature
    ```
-3. **Develop and Test**
-   - Implement your feature
-   - Ensure code compiles without errors
-   - Test new functionality doesn't affect existing features
-
-4. **Commit Changes**
+3. Commit your changes
    ```bash
-   git commit -m 'feat: add new feature description'
+   git commit -m 'Add some AmazingFeature'
    ```
-   - Follow [Conventional Commits](https://www.conventionalcommits.org/) specification
-
-5. **Push Branch**
+4. Push to the branch
    ```bash
-   git push origin feature/your-feature-name
+   git push origin feature/AmazingFeature
    ```
+5. Open a Pull Request
 
-6. **Create Pull Request**
-   - Provide clear PR description
-   - Explain problems solved and implementation methods
-   - Wait for code review and merge
+### Code Style
 
-### Code Review
-
+- Follow TypeScript best practices
+- Add appropriate comments and documentation
+- Ensure code compiles and passes tests
 - Keep code clean and readable
-- Add appropriate comments
-- Ensure all tests pass
-- Follow project coding standards
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE) - you are free to use, modify, and distribute this code.
+This project is licensed under MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-Thanks to the following projects and individuals:
+- VSCode team for excellent extension API
+- All open source package.json field standards
+- Community feedback and suggestions
+- All contributors' hard work
 
-- **VSCode Team** - For providing excellent extension API and development tools
-- **Node.js Community** - For providing a powerful package management ecosystem
-- **Open Source Contributors** - All developers who create and maintain node packages
-- **User Feedback** - Thanks to all users who provide valuable suggestions and bug reports
+## 📞 Contact
 
-## 🔗 Related Links
-
-- [VSCode Marketplace Link](https://marketplace.visualstudio.com/items?itemName=your-publisher.node-modules-url-extractor)
-- [GitHub Repository](https://github.com/your-username/node_modules-url-extractor)
-- [Issue Tracker](https://github.com/your-username/node_modules-url-extractor/issues)
-- [Changelog](CHANGELOG.md)
+- **GitHub Issues**: [Report Issues](https://github.com/shawn-web/node_modules-url-extractor/issues)
+- **GitHub Discussions**: [Join Discussions](https://github.com/shawn-web/node_modules-url-extractor/discussions)
 
 ---
 
-*📝 This documentation is partially auto-generated by the Node Modules URL Extractor extension*
+*📝 This documentation is partially auto-generated by Node Modules URL Extractor extension*
 
 *💡 If you find this extension useful, please give us a ⭐ Star!*

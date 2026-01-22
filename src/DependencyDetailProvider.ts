@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { DependencyTree } from './DependencyTree';
+import { I18n } from './i18n/I18n';
 
 export class DependencyDetailProvider {
   private webviewPanel: vscode.WebviewPanel | undefined;
@@ -8,7 +9,7 @@ export class DependencyDetailProvider {
     // 如果已经有打开的面板，就重用它
     if (this.webviewPanel) {
       // 更新面板内容
-      this.webviewPanel.title = `📦 ${packageName} - 依赖详情`;
+      this.webviewPanel.title = `${I18n.t('packageDetails')} - ${packageName}`;
       this.webviewPanel.webview.html = this.getWebviewContent(packageData, packageName, dependencyTree);
       // 让面板重新获得焦点
       this.webviewPanel.reveal();
@@ -18,7 +19,7 @@ export class DependencyDetailProvider {
     // 创建新的webview面板
     this.webviewPanel = vscode.window.createWebviewPanel(
       'dependencyDetail',
-      `📦 ${packageName} - 依赖详情`,
+      `📦 ${packageName} - ${I18n.t('packageDetails')}`,
       vscode.ViewColumn.Two,
       {
         enableScripts: true,
@@ -91,10 +92,10 @@ export class DependencyDetailProvider {
     // 生成URL列表HTML
     let urlHtml = '';
     const urlTypes = [
-      { key: 'homepage', name: '主页', icon: '🏠' },
-      { key: 'repository', name: '代码仓库', icon: '📁' },
-      { key: 'bugs', name: '问题反馈', icon: '🐛' },
-      { key: 'documentation', name: '文档', icon: '📚' }
+      { key: 'homepage', name: I18n.t('homepage'), icon: '🏠' },
+      { key: 'repository', name: I18n.t('repository'), icon: '📁' },
+      { key: 'bugs', name: I18n.t('bugs'), icon: '🐛' },
+      { key: 'documentation', name: I18n.t('documentation'), icon: '📚' }
     ];
 
     for (const urlType of urlTypes) {
@@ -114,23 +115,23 @@ export class DependencyDetailProvider {
 
     // 格式化作者信息
     const formatAuthor = (author: any): string => {
-      if (!author) return '未知';
+      if (!author) return I18n.t('unknown');
       if (typeof author === 'string') return author;
       if (typeof author === 'object' && author.name) {
         return author.email ? `${author.name} <${author.email}>` : author.name;
       }
-      return '未知';
+      return I18n.t('unknown');
     };
 
         // 获取依赖类型的中文显示
         const getDependencyTypeLabel = (type: string): string => {
             const labels: { [key: string]: string } = {
-                'dependencies': '生产依赖',
-                'devDependencies': '开发依赖',
-                'peerDependencies': '对等依赖',
-                'optionalDependencies': '可选依赖'
+                'dependencies': I18n.t('dependencies'),
+                'devDependencies': I18n.t('devDependencies'),
+                'peerDependencies': I18n.t('peerDependencies'),
+                'optionalDependencies': I18n.t('optionalDependencies')
             };
-            return labels[type] || '其他依赖';
+            return labels[type] || I18n.t('otherDependencies');
         };
 
         // 获取依赖类型的图标
@@ -178,7 +179,7 @@ export class DependencyDetailProvider {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>${packageName} 依赖详情</title>
+            <title>${packageName} ${I18n.t('packageDetails')}</title>
             <style>
                 body {
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
@@ -381,17 +382,17 @@ export class DependencyDetailProvider {
                 <div class="package-name">${getDependencyIcon(dependencyType)} ${packageName}</div>
                 <div class="package-info">
                     <div class="info-item">
-                        <span>🔖 版本:</span>
+                        <span>🔖 ${I18n.t('version')}:</span>
                         <span>${version}</span>
                     </div>
                     <div class="info-item">
-                        <span>📋 类型:</span>
+                        <span>📋 ${I18n.t('dependencies')}:</span>
                         <span>${getDependencyTypeLabel(dependencyType)}</span>
                     </div>
                 </div>
                 ${buildDependencyChain(packageData).length > 0 ? `
                 <div class="dependency-chain">
-                    <div class="chain-title">📊 依赖链路:</div>
+                    <div class="chain-title">📊 ${I18n.t('dependencyChain')}:</div>
                     <div class="chain-items">
                         ${buildDependencyChain(packageData).map((item, index) => 
                             `<span class="chain-item">${item}</span>${index < buildDependencyChain(packageData).length - 1 ? '<span class="chain-arrow"> → </span>' : ''}`
@@ -403,44 +404,44 @@ export class DependencyDetailProvider {
 
             ${description ? `
             <div class="section">
-                <div class="section-title">📝 描述</div>
+                <div class="section-title">📝 ${I18n.t('description') || 'Description'}</div>
                 <div class="description-info">${description}</div>
             </div>
             ` : ''}
 
             <div class="section">
-                <div class="section-title">ℹ️ 详细信息</div>
+                <div class="section-title">ℹ️ ${I18n.t('packageDetails')}</div>
                 <div class="detail-grid">
                     ${author ? `
                     <div class="detail-item">
-                        <span class="detail-label">👤 作者:</span>
+                        <span class="detail-label">👤 ${I18n.t('author')}:</span>
                         <span class="detail-value">${formatAuthor(author)}</span>
                     </div>
                     ` : ''}
                     ${license ? `
                     <div class="detail-item">
-                        <span class="detail-label">⚖️ 许可证:</span>
+                        <span class="detail-label">⚖️ ${I18n.t('license')}:</span>
                         <span class="detail-value">${license}</span>
                     </div>
                     ` : ''}
                     ${keywords.length > 0 ? `
                     <div class="detail-item">
-                        <span class="detail-label">🏷️ 关键词:</span>
+                        <span class="detail-label">🏷️ ${I18n.t('keywords')}:</span>
                         <div class="keywords-container">
                             ${keywords.map((keyword: string) => `<span class="keyword-tag">${keyword}</span>`).join('')}
                         </div>
                     </div>
                     ` : ''}
                     <div class="detail-item">
-                        <span class="detail-label">📁 安装路径:</span>
+                        <span class="detail-label">📁 ${I18n.t('path')}:</span>
                     </div>
                 </div>
                 <div class="path-info">${path}</div>
             </div>
 
             <div class="section">
-                <div class="section-title">🔗 相关链接</div>
-                ${urlHtml || '<div class="no-urls">暂无URL信息</div>'}
+                <div class="section-title">🔗 ${I18n.t('links')}</div>
+                ${urlHtml || `<div class="no-urls">${I18n.t('noUrlInformation')}</div>`}
             </div>
 
             <script>

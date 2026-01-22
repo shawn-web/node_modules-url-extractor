@@ -1,4 +1,5 @@
 import { PackageInfo } from './NodeModulesExtractor';
+import { I18n } from './i18n/I18n';
 
 export interface DependencyTreeNode {
     name: string;
@@ -35,14 +36,14 @@ export class DependencyTree {
             optionalDependencies: {}
         };
 
-        console.log(`开始构建依赖树，包数量: ${packages.length}`);
+        console.log(`Starting dependency tree build, package count: ${packages.length}`);
         
         // 首先按深度排序包，确保父包先于子包被处理
         const sortedPackages = packages.sort((a, b) => a.depth - b.depth);
         
         // 打印调试信息
         sortedPackages.forEach(pkg => {
-            console.log(`包: ${pkg.name}, 深度: ${pkg.depth}, 父包: ${pkg.parent}, 类型: ${pkg.dependencyType}`);
+            console.log(`Package: ${pkg.name}, depth: ${pkg.depth}, parent: ${pkg.parent}, type: ${pkg.dependencyType}`);
         });
 
         // 分两阶段构建树结构
@@ -59,7 +60,7 @@ export class DependencyTree {
         // 优化树结构，合并重复的依赖
         this.optimizeTree();
         
-        console.log(`依赖树构建完成`);
+        console.log(`Dependency tree construction completed`);
     }
 
     private addPackageToTree(pkg: PackageInfo): void {
@@ -103,7 +104,7 @@ export class DependencyTree {
             if (!targetContainer[pkg.name]) {
                 targetContainer[pkg.name] = node;
             }
-            console.log(`添加直接依赖: ${pkg.name} 到 ${depType}`);
+            console.log(`Added direct dependency: ${pkg.name} to ${depType}`);
         } else {
             // 间接依赖，查找父包并添加到其依赖中
             const parent = this.findPackageInTree(pkg.parent || '');
@@ -111,10 +112,10 @@ export class DependencyTree {
                 if (!parent.dependencies![pkg.name]) {
                     parent.dependencies![pkg.name] = node;
                 }
-                console.log(`添加子依赖: ${pkg.name} 到父包: ${pkg.parent}`);
+                console.log(`Added child dependency: ${pkg.name} to parent: ${pkg.parent}`);
             } else {
                 // 如果找不到父包，将其作为顶层依赖添加（这可能是父包还没有被处理）
-                console.warn(`找不到父包 ${pkg.parent}，将 ${pkg.name} 作为临时顶层依赖，稍后会重新分配`);
+                console.warn(`Parent package ${pkg.parent} not found, adding ${pkg.name} as temporary top-level dependency, will reassign later`);
                 
                 let targetContainer: { [key: string]: DependencyTreeNode };
                 if (depType === 'dependencies') {

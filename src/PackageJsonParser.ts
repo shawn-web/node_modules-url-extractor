@@ -471,7 +471,7 @@ export class PackageJsonParser {
         // 处理配置中的字段
         for (const field of this.config.includeFields) {
             const url = this.extractUrlFromField(packageJson, field);
-            if (url && this.isValidUrl(url)) {
+            if (url) {
                 urls[field] = url;
             }
         }
@@ -481,7 +481,7 @@ export class PackageJsonParser {
         for (const field of specialFields) {
             if (!this.config.includeFields.includes(field)) {
                 const url = this.extractUrlFromField(packageJson, field);
-                if (url && this.isValidUrl(url)) {
+                if (url) {
                     urls[field] = url;
                 }
             }
@@ -489,6 +489,14 @@ export class PackageJsonParser {
         
         // 尝试从其他字段提取URL
         this.extractUrlsFromCustomFields(packageJson, urls);
+        
+        // 最后清理无效的URL
+        for (const field of Object.keys(urls)) {
+            const urlValue = urls[field];
+            if (!urlValue || !this.isValidUrl(urlValue)) {
+                delete urls[field];
+            }
+        }
         
         return urls;
     }
@@ -498,21 +506,34 @@ export class PackageJsonParser {
             return null;
         }
         
+        let url: string | null = null;
+        
         if (typeof packageJson[field] === 'string') {
-            return this.cleanUrl(packageJson[field]);
+            url = this.cleanUrl(packageJson[field]);
         } else if (typeof packageJson[field] === 'object') {
             const obj = packageJson[field];
             if (obj.url) {
-                return this.cleanUrl(obj.url);
+                url = this.cleanUrl(obj.url);
             } else if (obj.type && obj.url) {
-                return `${obj.type}+${obj.url}`;
+                url = `${obj.type}+${obj.url}`;
             }
+        }
+        
+        // 验证URL是否有效
+        if (url && this.isValidUrl(url)) {
+            return url;
         }
         
         return null;
     }
 
     private cleanUrl(url: string): string {
+        // 首先检查是否是完整的URL（包含协议）
+        if (!url.includes('://') && !url.startsWith('mailto:')) {
+            // 如果不是完整URL且不是相对路径，则直接返回null，不处理
+            return url;
+        }
+        
         // 清理Git URL格式（如git://, git+https://等）
         if (url.startsWith('git+')) {
             return url.substring(4);
@@ -538,7 +559,7 @@ export class PackageJsonParser {
             const docFields = ['docs', 'documentation', 'readme', 'wiki'];
             for (const field of docFields) {
                 const url = this.extractUrlFromField(packageJson, field);
-                if (url && this.isValidUrl(url)) {
+                if (url) {
                     urls.documentation = url;
                     break;
                 }
@@ -550,7 +571,7 @@ export class PackageJsonParser {
             const urlFields = ['url', 'website', 'site', 'project', 'homepage'];
             for (const field of urlFields) {
                 const url = this.extractUrlFromField(packageJson, field);
-                if (url && this.isValidUrl(url)) {
+                if (url) {
                     urls.website = url;
                     break;
                 }
@@ -571,6 +592,14 @@ export class PackageJsonParser {
             return false;
         }
 
+        // 检查是否包含路径分隔符（如 / 或 \），这通常是相对路径
+        if (string.includes('/') || string.includes('\\')) {
+            // 如果是完整的URL，则保留；如果是相对路径，则排除
+            if (!string.includes('://') && !string.startsWith('mailto:')) {
+                return false;
+            }
+        }
+
         try {
             const url = new URL(string);
             
@@ -588,10 +617,15 @@ export class PackageJsonParser {
             return true;
         } catch {
             // 如果不是标准URL，尝试添加https://前缀再次验证
-            if (!string.startsWith('http://') && !string.startsWith('https://')) {
+            // 但要确保不是相对路径
+            if (!string.startsWith('http://') && !string.startsWith('https://') && 
+                !string.includes('/') && !string.includes('\\')) {
                 try {
-                    new URL(`https://${string}`);
-                    return true;
+                    const testUrl = new URL(`https://${string}`);
+                    // 确保是有效的域名格式（至少包含一个点）
+                    if (testUrl.hostname && testUrl.hostname.includes('.')) {
+                        return true;
+                    }
                 } catch {
                     return false;
                 }

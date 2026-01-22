@@ -6,6 +6,7 @@ import { DependencyTree } from './DependencyTree';
 import { MarkdownGenerator } from './MarkdownGenerator';
 import { DependencyTreeProvider } from './DependencyTreeProvider';
 import { IncrementalExtractor } from './IncrementalExtractor';
+import { I18n } from './i18n/I18n';
 
 export interface ExtractorConfig {
   maxDepth: number;
@@ -17,6 +18,7 @@ export interface ExtractorConfig {
   includeFields: string[];
   excludedProjects: string[];
   autoDetectProjects: boolean;
+  language?: string;
 }
 
 export interface ProjectStatus {
@@ -48,6 +50,14 @@ export interface PackageInfo {
   bugs?: any;
 }
 
+/**
+ * 🌐 多语言日志函数 - 确保日志使用正确的语言
+ */
+function log(message: string, ...args: any[]): void {
+  // 日志使用英文，但用户界面消息使用I18n
+  console.log(`[NodeModulesExtractor] ${message}`, ...args);
+}
+
 export class NodeModulesExtractor {
   private watcher: vscode.FileSystemWatcher | undefined;
   private statusBar: vscode.StatusBarItem;
@@ -63,9 +73,11 @@ export class NodeModulesExtractor {
   private workspaceNodeModules: Map<string, string[]> = new Map();
 
   constructor(private context: vscode.ExtensionContext) {
+    // 🌐 语言系统已在extension.ts中初始化完成，这里可以安全使用
     this.config = this.loadConfiguration();
     this.treeProvider = new DependencyTreeProvider();
-    // 状态栏项目已在package.json中定义，这里不需要再次创建
+    
+    // 创建状态栏项目 - 语言系统已就绪，可以正确显示文本
     this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     this.updateStatusBar();
 
@@ -94,25 +106,26 @@ export class NodeModulesExtractor {
       initialDelay: config.get<number>('initialDelay', 3000),
       includeFields: config.get<string[]>('includeFields', ['homepage', 'repository', 'bugs', 'documentation']),
       excludedProjects: config.get<string[]>('excludedProjects', []),
-      autoDetectProjects: config.get<boolean>('autoDetectProjects', true)
+      autoDetectProjects: config.get<boolean>('autoDetectProjects', true),
+      language: config.get<string>('language', 'zh-CN')
     };
   }
 
   private async initializeWorkspaces(): Promise<void> {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) {
-      console.log('没有工作区文件夹');
+      console.log(I18n.t('noWorkspaceFound'));
       return;
     }
 
     this.workspaceRoots = workspaceFolders.map(folder => folder.uri.fsPath);
     this.projectStatus.clear();
     
-    console.log(`工作区根目录: ${this.workspaceRoots}`);
+    log(`Workspace roots: ${this.workspaceRoots}`);
 
     // 检查每个工作区
     for (const root of this.workspaceRoots) {
-      console.log(`正在处理工作区: ${root}`);
+      log(`Processing workspace: ${root}`);
       const isExcluded = this.config.excludedProjects.some(excluded =>
         root.includes(excluded) || excluded.includes(root)
       );
@@ -137,7 +150,7 @@ export class NodeModulesExtractor {
           console.log(`✅ 在 ${root} 中找到 ${nodeModulesPaths.length} 个 node_modules:`, nodeModulesPaths);
         } else {
           this.projectStatus.set(root, { hasNodeModules, isExcluded, nodeModulesPaths: [] });
-          console.log(`❌ 在 ${root} 中未找到 node_modules 目录`);
+            console.log(`❌ ${I18n.t('noNodeModulesFound')} in ${root}`);
         }
     }
   }
@@ -231,7 +244,7 @@ export class NodeModulesExtractor {
   private enableMonitoring(): void {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) {
-      vscode.window.showWarningMessage('没有打开的工作区');
+      vscode.window.showWarningMessage(I18n.t('noWorkspaceFound'));
       return;
     }
 
@@ -239,7 +252,7 @@ export class NodeModulesExtractor {
     this.initializeWorkspaces().then(() => {
       const validProjects = this.getValidProjects();
       if (validProjects.length === 0) {
-        vscode.window.showWarningMessage('当前工作区中暂无可检查的项目');
+        vscode.window.showWarningMessage(I18n.t('noNodeModulesFound'));
         return;
       }
 
@@ -279,7 +292,7 @@ export class NodeModulesExtractor {
 
       this.isMonitoring = true;
       this.updateStatusBar();
-      vscode.window.showInformationMessage(`已开启node_modules监测，监控 ${validProjects.length} 个项目`);
+      vscode.window.showInformationMessage(I18n.tWithArgs('monitoringStarted', [validProjects.length.toString()]));
 
       // 初始提取
       this.extractAllUrls();
@@ -295,18 +308,25 @@ export class NodeModulesExtractor {
     }
     this.isMonitoring = false;
     this.updateStatusBar();
-    vscode.window.showInformationMessage('已关闭node_modules监测');
+     vscode.window.showInformationMessage(I18n.t('monitoringStopped'));
   }
 
-  private updateStatusBar(): void {
+  public refreshTreeView(): void {
+    // 🔄 刷新树视图，更新依赖类型标签
+    if (this.treeProvider && this.currentTreeData) {
+      this.treeProvider.refresh(this.currentTreeData);
+    }
+  }
+
+  public updateStatusBar(): void {
     // 使用不同的图标和颜色来区分监测状态
     if (this.isMonitoring) {
-      this.statusBar.text = '$(eye) 依赖监测中';
-      this.statusBar.tooltip = '点击关闭node_modules监测';
+      this.statusBar.text = `$(eye) ${I18n.t('statusBarMonitoring')}`;
+      this.statusBar.tooltip = I18n.t('statusBarTooltipOn');
       this.statusBar.color = '#4CAF50'; // 绿色表示正在监测
     } else {
-      this.statusBar.text = '$(eye-closed) 依赖监测';
-      this.statusBar.tooltip = '点击开启node_modules监测';
+      this.statusBar.text = `$(eye) ${I18n.t('statusBarNotMonitoring')}`;
+      this.statusBar.tooltip = I18n.t('statusBarTooltipOff');
       this.statusBar.color = '#cccccc'; // 灰色表示未监测
     }
     this.statusBar.command = 'nodeModulesExtractor.toggleMonitoring';
@@ -319,6 +339,25 @@ export class NodeModulesExtractor {
     
     console.log(`配置变更: maxDepth ${oldConfig.maxDepth} -> ${this.config.maxDepth}`);
     
+    // 检测语言变更
+    const languageChanged = oldConfig.language !== this.config.language;
+    if (languageChanged && this.config.language) {
+      // 语言设置变更，立即应用新语言
+      import('./i18n/I18n').then(({ I18n }) => {
+        I18n.setLocale(this.config.language as 'zh-CN' | 'en');
+        
+        const languageName = this.config.language === 'zh-CN' ? '简体中文' : 'English';
+        vscode.window.showInformationMessage(I18n.tWithArgs('languageChanged', [languageName]));
+        
+        // 刷新UI以应用新语言
+        this.refreshTreeView();
+        this.updateStatusBar();
+        
+        // 语言已实时生效，无需重启
+        console.log('✅ Language applied successfully from settings');
+      });
+    }
+
     // 如果maxDepth或其他关键配置发生变化，强制重新提取
     const configChanged = oldConfig.maxDepth !== this.config.maxDepth || 
                          oldConfig.includeFields.join(',') !== this.config.includeFields.join(',');
@@ -332,7 +371,7 @@ export class NodeModulesExtractor {
       
       // 重新初始化工作区（这会重新查找 node_modules）
       this.initializeWorkspaces().then(() => {
-        vscode.window.showInformationMessage(`配置已更新 (maxDepth: ${this.config.maxDepth})，正在重新提取依赖信息...`);
+         vscode.window.showInformationMessage(I18n.tWithArgs('configurationUpdated', [this.config.maxDepth.toString()]));
         this.extractAllUrls().then(() => {
           // 确保树视图更新
           console.log('依赖提取完成，树数据已更新');
@@ -372,7 +411,7 @@ export class NodeModulesExtractor {
     // 检查是否是根目录的package.json
     if (relativePath === 'package.json') {
       setTimeout(() => {
-        vscode.window.showInformationMessage('检测到package.json变化，重新提取依赖信息...');
+        vscode.window.showInformationMessage(I18n.t('packageJsonChanged'));
         this.extractAllUrls();
       }, 1000);
     } 
@@ -389,7 +428,7 @@ export class NodeModulesExtractor {
     if (this.isMonitoring && !this.isExtracting) {
       // 使用延迟避免频繁变化时的重复提取
       setTimeout(() => {
-        vscode.window.showInformationMessage('检测到node_modules变化，正在重新提取URL...');
+        vscode.window.showInformationMessage(I18n.t('nodeModulesChanged'));
         this.extractAllUrls();
       }, 1000);
     }
@@ -415,7 +454,7 @@ export class NodeModulesExtractor {
         // 启动时不显示错误，静默跳过
         return;
       }
-      vscode.window.showInformationMessage('当前工作区中暂无可检查的项目');
+      vscode.window.showInformationMessage(I18n.t('noProjectsAvailable'));
       return;
     }
 
@@ -477,13 +516,13 @@ export class NodeModulesExtractor {
       });
 
       if (!isStartup) {
-        vscode.window.showInformationMessage(`URL提取完成，已保存到 ${this.config.outputFileName}`);
+        vscode.window.showInformationMessage(I18n.tWithArgs('extractionCompleted', [this.config.outputFileName]));
       } else {
         // 启动完成后显示简短提示
-        vscode.window.setStatusBarMessage(`✅ 依赖文档已更新`, 3000);
+        vscode.window.setStatusBarMessage(`✅ ${I18n.tWithArgs('extractionCompleted', [this.config.outputFileName])}`, 3000);
       }
     } catch (error) {
-      const errorMsg = `URL提取失败: ${error instanceof Error ? error.message : '未知错误'}`;
+      const errorMsg = `${I18n.t('errorExtractionFailed')}: ${error instanceof Error ? error.message : 'Unknown error'}`;
       if (isStartup) {
         // 启动时的错误在状态栏显示
         vscode.window.setStatusBarMessage(`❌ ${errorMsg}`, 5000);
@@ -530,7 +569,7 @@ export class NodeModulesExtractor {
   }
 
   public showConfiguration(): void {
-    vscode.window.showInformationMessage('配置功能开发中...', '打开设置').then(selection => {
+    vscode.window.showInformationMessage(I18n.t('configurationInDevelopment'), I18n.t('openSettings')).then(selection => {
       if (selection === '打开设置') {
         vscode.commands.executeCommand('workbench.action.openSettings', 'nodeModulesExtractor');
       }
@@ -555,9 +594,9 @@ export class NodeModulesExtractor {
       await this.updateDependencyTree(changedPackages);
 
       // 显示变更提示
-      vscode.window.showInformationMessage(`已更新 ${changedPackages.length} 个包的URL信息`);
+      vscode.window.showInformationMessage(I18n.tWithArgs('packagesUpdated', [changedPackages.length.toString()]));
     } catch (error) {
-      vscode.window.showErrorMessage(`增量更新失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      vscode.window.showErrorMessage(I18n.tWithArgs('incrementalUpdateFailed', [error instanceof Error ? error.message : I18n.t('unknownError')]));
     }
   }
 
@@ -627,7 +666,7 @@ export class NodeModulesExtractor {
   public async manageExclusions(): Promise<void> {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders) {
-      vscode.window.showInformationMessage('没有打开的工作区');
+      vscode.window.showInformationMessage(I18n.t('noWorkspaceOpen'));
       return;
     }
 
@@ -643,7 +682,7 @@ export class NodeModulesExtractor {
 
     if (currentExclusions.length > 0) {
       options.push({
-        label: '--- 当前排除的项目 ---',
+        label: I18n.t('currentExcludedProjects'),
         description: '',
         path: ''
       });
@@ -658,7 +697,7 @@ export class NodeModulesExtractor {
     }
 
     const selected = await vscode.window.showQuickPick(options, {
-      placeHolder: '选择要排除或取消排除的项目',
+      placeHolder: I18n.t('selectExclusionManagement'),
       canPickMany: false
     });
 
@@ -671,12 +710,12 @@ export class NodeModulesExtractor {
           // 从排除列表中移除
           const newExclusions = currentExclusions.filter(excluded => excluded !== selected.path);
           await this.updateExclusionList(newExclusions);
-          vscode.window.showInformationMessage(`已将 "${selected.label}" 从排除列表中移除`);
+          vscode.window.showInformationMessage(I18n.tWithArgs('removedFromExclusions', [selected.label]));
         } else {
           // 添加到排除列表
           const newExclusions = [...currentExclusions, selected.path];
           await this.updateExclusionList(newExclusions);
-          vscode.window.showInformationMessage(`已将 "${selected.label}" 添加到排除列表`);
+          vscode.window.showInformationMessage(I18n.tWithArgs('addedToExclusions', [selected.label]));
         }
       }
     }

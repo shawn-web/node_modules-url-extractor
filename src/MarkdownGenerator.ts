@@ -1,5 +1,6 @@
 import { PackageInfo, ExtractorConfig } from './NodeModulesExtractor';
 import { DependencyTree } from './DependencyTree';
+import { I18n } from './i18n/I18n';
 
 export class MarkdownGenerator {
   constructor(private config: ExtractorConfig, private dependencyTree?: DependencyTree) { }
@@ -30,29 +31,29 @@ export class MarkdownGenerator {
   }
 
   private generateHeader(stats: any): string {
-    const date = new Date().toLocaleString('zh-CN');
-    return `# 📚 Node Modules 依赖文档
+    const locale = I18n.getCurrentLocale();
+    const date = new Date().toLocaleString(locale === 'zh-CN' ? 'zh-CN' : 'en-US');
+    return `# ${I18n.t('dependencyDocumentTitle')}
 
-> 📅 生成时间: ${date}  
-> 🔍 扫描深度: ${this.config.maxDepth}层  
-> 📦 总包数: ${stats.totalPackages}  
-> 🔗 包含URL: ${stats.packagesWithUrls}
+> ${I18n.t('generationTime')}: ${date}
+> ${I18n.t('scanDepth')}: ${this.config.maxDepth}${I18n.getCurrentLocale() === 'zh-CN' ? '层' : ' levels'}
+> ${I18n.t('totalPackages')}: ${stats.totalPackages}
+> ${I18n.t('packagesWithUrls')}: ${stats.packagesWithUrls}
 
 ---
-
 `;
   }
 
   private generateStatistics(stats: any): string {
-    return `## 📊 统计信息
+    return `## ${I18n.t('statisticsSection')}
 
-| 指标 | 数量 |
+| ${I18n.t('metric')} | ${I18n.t('quantity')} |
 |------|------|
-| 总包数 | ${stats.totalPackages} |
-| 包含URL的包 | ${stats.packagesWithUrls} |
-| 最大深度 | ${stats.maxDepth} |
-| URL总数 | ${stats.totalUrls} |
-| 覆盖率 | ${((stats.packagesWithUrls / stats.totalPackages) * 100).toFixed(1)}% |
+| ${I18n.t('totalPackages')} | ${stats.totalPackages} |
+| ${I18n.t('packagesWithUrlsMetric')} | ${stats.packagesWithUrls} |
+| ${I18n.t('maxDepth')} | ${stats.maxDepth} |
+| ${I18n.t('totalUrls')} | ${stats.totalUrls} |
+| ${I18n.t('coverage')} | ${((stats.packagesWithUrls / stats.totalPackages) * 100).toFixed(1)}% |
 
 ---
 
@@ -60,12 +61,12 @@ export class MarkdownGenerator {
   }
 
   private generateTableOfContents(): string {
-    return `## 📋 目录
+    return `## ${I18n.t('tableOfContents')}
 
-- [📊 统计信息](#-统计信息)
-- [📦 完整依赖列表](#-完整依赖列表)
-- [🔗 URL快速索引](#-url快速索引)
-- [⚙️ 配置信息](#️-配置信息)
+- [${I18n.t('statisticsSection')}](#${I18n.t('statisticsSection').toLowerCase().replace(/[^a-z0-9]/g, '')})
+- [${I18n.t('completeDependencyList')}](#${I18n.t('completeDependencyList').toLowerCase().replace(/[^a-z0-9]/g, '')})
+- [${I18n.t('urlQuickIndex')}](#${I18n.t('urlQuickIndex').toLowerCase().replace(/[^a-z0-9]/g, '')})
+- [${I18n.t('configurationSection')}](#${I18n.t('configurationSection').toLowerCase().replace(/[^a-z0-9]/g, '')})
 
 ---
 
@@ -73,7 +74,7 @@ export class MarkdownGenerator {
   }
 
   private generateDependencyList(tree: any): string {
-    let markdown = `## 📦 完整依赖列表\n\n`;
+    let markdown = `## ${I18n.t('completeDependencyList')}\n\n`;
     markdown += this.generateDependencyTree(tree);
 
     // 按URL类型分组（作为可选的分类）
@@ -83,7 +84,7 @@ export class MarkdownGenerator {
 
     if (hasUrls) {
       markdown += `---\n\n`;
-      markdown += `## 🔗 URL快速索引\n\n`;
+      markdown += `## ${I18n.t('urlQuickIndex')}\n\n`;
 
       for (const [type, urls] of Object.entries(urlGroups)) {
         if (urls.length > 0) {
@@ -109,16 +110,16 @@ export class MarkdownGenerator {
 
     // 处理新的树结构：按依赖类型分组，显示层级关系
     const depTypes = [
-      { key: 'dependencies', name: '生产依赖 (dependencies)', icon: '📦' },
-      { key: 'devDependencies', name: '开发依赖 (devDependencies)', icon: '🛠️' },
-      { key: 'peerDependencies', name: '对等依赖 (peerDependencies)', icon: '🤝' },
-      { key: 'optionalDependencies', name: '可选依赖 (optionalDependencies)', icon: '⚡' }
+      { key: 'dependencies', name: I18n.t('dependenciesLabel') },
+      { key: 'devDependencies', name: I18n.t('devDependenciesLabel') },
+      { key: 'peerDependencies', name: I18n.t('peerDependenciesLabel') },
+      { key: 'optionalDependencies', name: I18n.t('optionalDependenciesLabel') }
     ];
 
     for (const depType of depTypes) {
       const deps = tree[depType.key];
       if (deps && typeof deps === 'object' && Object.keys(deps).length > 0) {
-        result += `### ${depType.icon} ${depType.name}\n\n`;
+        result += `### ${depType.name}\n\n`;
 
         for (const [name, dep] of Object.entries(deps)) {
           result += this.generateDependencyTreeNodeWithHierarchy(dep as any, name, 1);
@@ -256,11 +257,11 @@ export class MarkdownGenerator {
 
   private getUrlTypeName(type: string): string {
     const names: { [key: string]: string } = {
-      homepage: '主页',
-      repository: '代码仓库',
-      bugs: '问题反馈',
-      documentation: '文档',
-      other: '其他链接'
+      homepage: I18n.t('homepage'),
+      repository: I18n.t('repository'),
+      bugs: I18n.t('bugs'),
+      documentation: I18n.t('documentation'),
+      other: I18n.t('other')
     };
     return names[type] || names.other;
   }
@@ -275,15 +276,15 @@ export class MarkdownGenerator {
   }
 
   private generateConfiguration(): string {
-    return `## ⚙️ 配置信息
+    return `## ${I18n.t('configurationSection')}
 
-| 配置项 | 值 |
+| ${I18n.t('configurationItem')} | ${I18n.t('value')} |
 |--------|-----|
-| 遍历深度 | ${this.config.maxDepth} |
-| 输出格式 | ${this.config.outputFormat} |
-| 输出文件名 | ${this.config.outputFileName} |
-| 自动监测 | ${this.config.autoMonitoring ? '开启' : '关闭'} |
-| 提取字段 | ${this.config.includeFields.join(', ')} |
+| ${I18n.t('traversalDepth')} | ${this.config.maxDepth} |
+| ${I18n.t('outputFormatConfig')} | ${this.config.outputFormat} |
+| ${I18n.t('outputFileNameConfig')} | ${this.config.outputFileName} |
+| ${I18n.t('autoMonitoringConfig')} | ${this.config.autoMonitoring ? I18n.t('enabled') : I18n.t('disabled')} |
+| ${I18n.t('extractFields')} | ${this.config.includeFields.join(', ')} |
 
 ---
 
@@ -293,6 +294,6 @@ export class MarkdownGenerator {
   private generateFooter(): string {
     return `---
 
-*💡 提示: 您可以在 VSCode 设置中自定义提取配置*`;
+*${I18n.t('tipMessage')}: ${I18n.t('customConfigTip')}*`;
   }
 }

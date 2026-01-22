@@ -114,3 +114,13 @@ test-detail-provider.js
 *.local
 dependency-urls.md
 dependency-urls.json
+
+# Development mode files
+package.dev*.json
+
+# Temporary documentation files
+*-feature.md
+*-fixes.md
+*-report.md
+*-optimization.md
+*-test.md
